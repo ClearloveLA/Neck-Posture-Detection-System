@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>颈椎保护系统</title>
+    <style>
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .main-content {
+            display: flex;
+            gap: 20px;
+        }
+        .video-container {
+            flex: 2;
+        }
+        .info-panel {
+            flex: 1;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.good {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .controls {
+            margin-top: 20px;
+        }
+        .btn {
+            padding: 10px 20px;
+            margin: 5px;
+            font-size: 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .settings {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>智能颈椎保护系统</h1>
+        
+        <div class="main-content">
+            <div class="video-container">
+                <img src="{{ url_for('video_feed') }}" width="640" height="480">
+            </div>
+            
+            <div class="info-panel">
+                <h2>状态信息</h2>
+                <div id="currentStatus" class="status">
+                    当前状态: <span id="statusText">未开始</span>
+                </div>
+                <div id="angleInfo" class="status">
+                    颈部角度: <span id="angleText">0°</span>
+                </div>
+                
+                <div class="controls">
+                    <button class="btn btn-primary" onclick="startDetection()">开始检测</button>
+                    <button class="btn btn-danger" onclick="stopDetection()">停止检测</button>
+                </div>
+                
+                <div class="settings">
+                    <h3>设置</h3>
+                    <div>
+                        <label>提醒时间阈值(秒):</label>
+                        <input type="number" id="threshold" value="30" min="1">
+                    </div>
+                    <div>
+                        <label>声音提醒:</label>
+                        <input type="checkbox" id="soundAlert" checked>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let statusCheckInterval;
+
+        function startDetection() {
+            fetch('/start_detection')
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    startStatusCheck();
+                });
+        }
+
+        function stopDetection() {
+            fetch('/stop_detection')
+                .then(response => response.text())
+                .then(data => {
+                    alert(data);
+                    clearInterval(statusCheckInterval);
+                });
+        }
+
+        function startStatusCheck() {
+            statusCheckInterval = setInterval(() => {
+                fetch('/get_status')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateStatus(data);
+                    });
+            }, 1000);
+        }
+
+        function updateStatus(data) {
+            document.getElementById('statusText').textContent = data.status;
+            document.getElementById('angleText').textContent = data.angle + '°';
+            
+            const statusDiv = document.getElementById('currentStatus');
+            if (data.status === '正常') {
+                statusDiv.className = 'status good';
+            } else if (data.status === '警告') {
+                statusDiv.className = 'status warning';
+            }
+        }
+    </script>
+</body>
+</html>
